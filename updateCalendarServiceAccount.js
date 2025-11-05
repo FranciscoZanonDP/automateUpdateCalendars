@@ -242,23 +242,22 @@ class ServiceAccountCalendarUpdater {
     formatShowToEvent(show) {
         const showDate = new Date(show.show_date);
         
-        const startTime = new Date(showDate);
-        startTime.setHours(21, 0, 0, 0);
+        // Formatear fecha de inicio en formato YYYY-MM-DD (evento de todo el día)
+        const startDateStr = showDate.toISOString().split('T')[0];
         
-        const endTime = new Date(showDate);
-        endTime.setDate(endTime.getDate() + 1);
-        endTime.setHours(0, 0, 0, 0);
+        // Fecha de fin es el día siguiente (para eventos de todo el día)
+        const endDate = new Date(showDate);
+        endDate.setDate(endDate.getDate() + 1);
+        const endDateStr = endDate.toISOString().split('T')[0];
 
         const event = {
             summary: `${show.artist.name} - ${show.venue.name}`,
             description: `🎤 Artista: ${show.artist.name}\n🏟️ Venue: ${show.venue.name}\n📍 Ciudad: ${show.city}, ${show.country}\n📊 Status: ${show.status || 'N/A'}\n🎫 Ticketera: ${show.ticketera.name}\n🔗 URL: ${show.ticketera.url}\n⭐ Género: ${show.artist.genre}`,
             start: {
-                dateTime: startTime.toISOString(),
-                timeZone: 'America/Argentina/Buenos_Aires'
+                date: startDateStr  // Formato YYYY-MM-DD para evento de todo el día
             },
             end: {
-                dateTime: endTime.toISOString(),
-                timeZone: 'America/Argentina/Buenos_Aires'
+                date: endDateStr  // Formato YYYY-MM-DD para evento de todo el día
             },
             location: show.venue.address || `${show.venue.name}, ${show.city}, ${show.country}`,
             status: 'confirmed',

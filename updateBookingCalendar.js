@@ -161,18 +161,13 @@ class BookingCalendarUpdater {
         // Usar start_date como fecha del evento (como especificaste)
         const eventDate = new Date(bookingEvent.start_date);
         
-        // Crear horario de inicio (21:00 por defecto, o usar hora_salida si está disponible)
-        const startTime = new Date(eventDate);
-        if (bookingEvent.hora_salida) {
-            const [hours, minutes] = bookingEvent.hora_salida.split(':');
-            startTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-        } else {
-            startTime.setHours(21, 0, 0, 0); // 21:00 por defecto
-        }
+        // Formatear fecha de inicio en formato YYYY-MM-DD (evento de todo el día)
+        const startDateStr = eventDate.toISOString().split('T')[0];
         
-        // Crear horario de fin (2 horas después del inicio)
-        const endTime = new Date(startTime);
-        endTime.setHours(endTime.getHours() + 2);
+        // Fecha de fin es el día siguiente (para eventos de todo el día)
+        const endDate = new Date(eventDate);
+        endDate.setDate(endDate.getDate() + 1);
+        const endDateStr = endDate.toISOString().split('T')[0];
 
         // Crear título del evento (formato: Artista - Venue)
         let title = '';
@@ -203,12 +198,10 @@ class BookingCalendarUpdater {
             summary: title || 'Evento de Booking',
             description: description,
             start: {
-                dateTime: startTime.toISOString(),
-                timeZone: 'America/Argentina/Buenos_Aires'
+                date: startDateStr  // Formato YYYY-MM-DD para evento de todo el día
             },
             end: {
-                dateTime: endTime.toISOString(),
-                timeZone: 'America/Argentina/Buenos_Aires'
+                date: endDateStr  // Formato YYYY-MM-DD para evento de todo el día
             },
             location: location,
             status: 'confirmed',

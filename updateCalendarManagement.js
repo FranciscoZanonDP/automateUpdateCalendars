@@ -165,12 +165,13 @@ class ManagementCalendarUpdater {
     formatManagementEventToCalendar(event) {
         const showDate = new Date(event.show_date);
         
-        const startTime = new Date(showDate);
-        startTime.setHours(21, 0, 0, 0);
+        // Formatear fecha de inicio en formato YYYY-MM-DD (evento de todo el día)
+        const startDateStr = showDate.toISOString().split('T')[0];
         
-        const endTime = new Date(showDate);
-        endTime.setDate(endTime.getDate() + 1);
-        endTime.setHours(0, 0, 0, 0);
+        // Fecha de fin es el día siguiente (para eventos de todo el día)
+        const endDate = new Date(showDate);
+        endDate.setDate(endDate.getDate() + 1);
+        const endDateStr = endDate.toISOString().split('T')[0];
 
         // Crear descripción detallada para management
         let description = `🎤 Artista: ${event.artist_name || 'N/A'}\n`;
@@ -217,12 +218,10 @@ class ManagementCalendarUpdater {
             summary: eventTitle,
             description: description,
             start: {
-                dateTime: startTime.toISOString(),
-                timeZone: 'America/Argentina/Buenos_Aires'
+                date: startDateStr  // Formato YYYY-MM-DD para evento de todo el día
             },
             end: {
-                dateTime: endTime.toISOString(),
-                timeZone: 'America/Argentina/Buenos_Aires'
+                date: endDateStr  // Formato YYYY-MM-DD para evento de todo el día
             },
             location: event.venue_address || `${event.venue_name}, ${event.city}, ${event.country}`,
             status: 'confirmed',
