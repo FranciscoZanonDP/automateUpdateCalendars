@@ -240,6 +240,17 @@ class ServiceAccountCalendarUpdater {
      * Convierte show a evento de Google Calendar
      */
     formatShowToEvent(show) {
+        // Validaciones de seguridad con valores por defecto
+        const artistName = show.artist?.name || 'Artista Desconocido';
+        const venueName = show.venue?.name || 'Venue Desconocido';
+        const city = show.city || 'Ciudad Desconocida';
+        const country = show.country || 'País Desconocido';
+        const status = show.status || 'N/A';
+        const artistGenre = show.artist?.genre || 'N/A';
+        const ticketeraName = show.ticketera?.name || 'N/A';
+        const ticketeraUrl = show.ticketera?.url || 'N/A';
+        const venueAddress = show.venue?.address || null;
+
         const showDate = new Date(show.show_date);
         
         // Formatear fecha de inicio en formato YYYY-MM-DD (evento de todo el día)
@@ -251,18 +262,18 @@ class ServiceAccountCalendarUpdater {
         const endDateStr = endDate.toISOString().split('T')[0];
 
         const event = {
-            summary: `${show.artist.name} - ${show.venue.name}`,
-            description: `🎤 Artista: ${show.artist.name}\n🏟️ Venue: ${show.venue.name}\n📍 Ciudad: ${show.city}, ${show.country}\n📊 Status: ${show.status || 'N/A'}\n🎫 Ticketera: ${show.ticketera.name}\n🔗 URL: ${show.ticketera.url}\n⭐ Género: ${show.artist.genre}`,
+            summary: `${artistName} - ${venueName}`,
+            description: `🎤 Artista: ${artistName}\n🏟️ Venue: ${venueName}\n📍 Ciudad: ${city}, ${country}\n📊 Status: ${status}\n🎫 Ticketera: ${ticketeraName}\n🔗 URL: ${ticketeraUrl}\n⭐ Género: ${artistGenre}`,
             start: {
                 date: startDateStr  // Formato YYYY-MM-DD para evento de todo el día
             },
             end: {
                 date: endDateStr  // Formato YYYY-MM-DD para evento de todo el día
             },
-            location: show.venue.address || `${show.venue.name}, ${show.city}, ${show.country}`,
+            location: venueAddress || `${venueName}, ${city}, ${country}`,
             status: 'confirmed',
             visibility: 'public',
-            colorId: this.getColorForGenre(show.artist.genre)
+            colorId: this.getColorForGenre(artistGenre)
         };
 
         return event;
