@@ -289,15 +289,24 @@ class ReleasesCalendarUpdater {
             
             console.log(`✅ Se obtuvieron ${releasesArray.length} releases`);
             
-            // Mostrar primeros 3 releases para debug
+            // Mostrar primeros 3 releases válidos para debug
             if (releasesArray.length > 0) {
                 console.log('📋 Primeros 3 releases encontrados:');
-                releasesArray.slice(0, 3).forEach((release, index) => {
-                    const title = release.title || release.name || 'Sin título';
-                    const artist = release.artist?.name || release.artist_name || 'Artista desconocido';
-                    const date = release.release_date || release.date || release.created_at || 'Sin fecha';
-                    console.log(`   ${index + 1}. ${artist} - ${title} (${date})`);
+                let validCount = 0;
+                releasesArray.slice(0, 10).forEach((release, index) => {
+                    const artist = release.artist || 'Artista desconocido';
+                    const track = release.track || 'Sin título';
+                    const date = release.releaseDate || 'Sin fecha';
+                    
+                    if (validCount < 3 && release.releaseDate) {
+                        console.log(`   ${validCount + 1}. ${artist} - ${track} (${date})`);
+                        validCount++;
+                    }
                 });
+                
+                if (validCount === 0) {
+                    console.log('   ⚠️  No se encontraron releases con fecha válida en los primeros 10');
+                }
             }
             
             return releasesArray;
@@ -315,17 +324,30 @@ class ReleasesCalendarUpdater {
      * Convierte release a evento de Google Calendar
      */
     formatReleaseToEvent(release) {
-        // Validaciones de seguridad con valores por defecto
-        const artistName = release.artist?.name || release.artist_name || 'Artista Desconocido';
-        const releaseTitle = release.title || release.name || 'Título Desconocido';
-        const releaseType = release.type || release.release_type || 'Release';
-        const releaseDate = release.release_date || release.date || release.created_at;
-        const genre = release.genre || release.artist?.genre || 'N/A';
-        const label = release.label || release.label_name || 'N/A';
-        const description = release.description || release.overview || '';
-        const coverUrl = release.cover || release.cover_url || release.artwork_url || '';
-        const spotifyUrl = release.spotify_url || release.external_urls?.spotify || '';
-        const appleUrl = release.apple_url || release.external_urls?.apple || '';
+        // Validaciones de seguridad con valores por defecto según la estructura real de la API
+        const artistName = release.artist || 'Artista Desconocido';
+        const releaseTitle = release.track || 'Sin título';
+        const releaseType = release.releaseType || release.type || 'Release';
+        const releaseDate = release.releaseDate || release.release_date || release.date;
+        const status = release.status || 'N/A';
+        const repOwner = release.repOwner || 'N/A';
+        const priorityTerritories = release.priorityTerritories || '';
+        const artistImage = release.artistImage || '';
+        
+        // Parsear links si es un string JSON
+        let links = {};
+        if (release.links) {
+            try {
+                if (typeof release.links === 'string') {
+                    links = JSON.parse(release.links);
+                } else {
+                    links = release.links;
+                }
+            } catch (e) {
+                // Si no se puede parsear, usar objeto vacío
+                links = {};
+            }
+        }
         
         if (!releaseDate) {
             throw new Error(`Release sin fecha: ${artistName} - ${releaseTitle}`);
@@ -346,22 +368,32 @@ class ReleasesCalendarUpdater {
         const endDateStr = endDate.toISOString().split('T')[0];
 
         // Construir descripción del evento
-        let eventDescription = `🎵 Artista: ${artistName}\n📀 Título: ${releaseTitle}\n📋 Tipo: ${releaseType}\n🎭 Género: ${genre}\n🏷️  Sello: ${label}`;
+        let eventDescription = `🎵 Artista: ${artistName}\n📀 Track: ${releaseTitle}\n📋 Tipo: ${releaseType}\n📊 Estado: ${status}\n🌍 Territorio: ${repOwner}`;
         
-        if (description) {
-            eventDescription += `\n\n📝 Descripción:\n${description}`;
+        if (priorityTerritories) {
+            eventDescription += `\n⭐ Territorios prioritarios: ${priorityTerritories}`;
         }
         
-        if (spotifyUrl) {
-            eventDescription += `\n\n🎧 Spotify: ${spotifyUrl}`;
+        if (release.isPriority) {
+            eventDescription += `\n🔥 Prioridad: Alta`;
         }
         
-        if (appleUrl) {
-            eventDescription += `\n🍎 Apple Music: ${appleUrl}`;
+        if (release.releaseCount && release.releaseCount > 1) {
+            eventDescription += `\n🔢 Cantidad de releases: ${release.releaseCount}`;
         }
         
-        if (coverUrl) {
-            eventDescription += `\n\n🖼️  Portada: ${coverUrl}`;
+        // Agregar links si existen
+        if (links && Object.keys(links).length > 0) {
+            eventDescription += `\n\n🔗 Enlaces:`;
+            Object.entries(links).forEach(([platform, url]) => {
+                if (url) {
+                    eventDescription += `\n   • ${platform}: ${url}`;
+                }
+            });
+        }
+        
+        if (artistImage) {
+            eventDescription += `\n\n🖼️  Imagen del artista: ${artistImage}`;
         }
 
         const event = {
@@ -536,29 +568,39 @@ class ReleasesCalendarUpdater {
             // 4. Filtrar releases válidos (con fecha de lanzamiento)
             const now = new Date();
             const validReleases = allReleases.filter(release => {
-                const releaseDate = release.release_date || release.date || release.created_at;
+                const releaseDate = release.releaseDate || release.release_date || release.date;
                 if (!releaseDate) {
-                    console.warn(`⚠️  Release sin fecha ignorado: ${release.title || release.name || 'Sin título'}`);
+                    // Solo mostrar warning para los primeros 5 releases sin fecha para no saturar los logs
+                    const artist = release.artist || 'Artista desconocido';
+                    const track = release.track || 'Sin título';
                     return false;
                 }
                 
                 try {
                     const dateObj = new Date(releaseDate);
-                    return !isNaN(dateObj.getTime());
+                    if (isNaN(dateObj.getTime())) {
+                        return false;
+                    }
+                    return true;
                 } catch (error) {
-                    console.warn(`⚠️  Release con fecha inválida ignorado: ${release.title || release.name || 'Sin título'} (${releaseDate})`);
                     return false;
                 }
             });
             
+            // Contar releases sin fecha para estadísticas
+            const releasesWithoutDate = allReleases.length - validReleases.length;
+            if (releasesWithoutDate > 0) {
+                console.log(`⚠️  ${releasesWithoutDate} releases sin fecha válida fueron ignorados`);
+            }
+            
             // Separar por fechas para estadísticas
             const pastReleases = validReleases.filter(release => {
-                const releaseDate = new Date(release.release_date || release.date || release.created_at);
+                const releaseDate = new Date(release.releaseDate || release.release_date || release.date);
                 return releaseDate < now;
             });
             
             const futureReleases = validReleases.filter(release => {
-                const releaseDate = new Date(release.release_date || release.date || release.created_at);
+                const releaseDate = new Date(release.releaseDate || release.release_date || release.date);
                 return releaseDate >= now;
             });
 
@@ -606,20 +648,22 @@ class ReleasesCalendarUpdater {
             console.log(`❌ Eventos fallidos: ${results.errorCount}`);
             
             const stats = {
-                artists: new Set(validReleases.map(r => r.artist?.name || r.artist_name || 'Desconocido')).size,
-                types: new Set(validReleases.map(r => r.type || r.release_type || 'Release')).size,
-                genres: new Set(validReleases.map(r => r.genre || r.artist?.genre || 'N/A')).size
+                artists: new Set(validReleases.map(r => r.artist || 'Desconocido')).size,
+                types: new Set(validReleases.map(r => r.releaseType || r.type || 'Release')).size,
+                statuses: new Set(validReleases.map(r => r.status || 'N/A')).size,
+                territories: new Set(validReleases.map(r => r.repOwner || 'N/A')).size
             };
 
             console.log('\n📈 ESTADÍSTICAS:');
-            console.log(`   • Artistas: ${stats.artists}`);
+            console.log(`   • Artistas únicos: ${stats.artists}`);
             console.log(`   • Tipos de release: ${stats.types}`);
-            console.log(`   • Géneros: ${stats.genres}`);
+            console.log(`   • Estados: ${stats.statuses}`);
+            console.log(`   • Territorios: ${stats.territories}`);
             
             // Mostrar rango de fechas
             if (validReleases.length > 0) {
                 const dates = validReleases
-                    .map(r => new Date(r.release_date || r.date || r.created_at))
+                    .map(r => new Date(r.releaseDate || r.release_date || r.date))
                     .filter(d => !isNaN(d.getTime()))
                     .sort((a, b) => a - b);
                     
