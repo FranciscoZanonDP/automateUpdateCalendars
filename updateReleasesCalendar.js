@@ -83,11 +83,14 @@ class ReleasesCalendarUpdater {
     }
 
     /**
-     * Busca el calendario "Releases" usando ID directo
+     * Busca el calendario "Records" usando ID directo
      */
     async findReleasesCalendar() {
         try {
             console.log(`🔍 Conectando al calendario: ${calendarConfig.calendarName}`);
+            
+            // Obtener el email del Service Account para mostrar instrucciones
+            const serviceAccountEmail = this.loadServiceAccount()?.client_email || 'SERVICE_ACCOUNT_EMAIL';
             
             // Si está configurado para forzar un ID específico
             if (calendarConfig.forceCalendarId) {
@@ -108,7 +111,68 @@ class ReleasesCalendarUpdater {
                         return calendarInfo.data;
                     }
                 } catch (error) {
-                    console.error(`❌ Error con ID forzado ${calendarConfig.calendarId}:`, error.message);
+                    if (error.code === 404) {
+                        console.error(`❌ Error 404: El calendario no fue encontrado o el Service Account no tiene acceso`);
+                        console.error('');
+                        console.error('🔧 SOLUCIÓN: Compartir el calendario con el Service Account');
+                        console.error('');
+                        console.error('📋 PASOS PARA COMPARTIR EL CALENDARIO "RECORDS":');
+                        console.error('');
+                        console.error('1️⃣  Abre Google Calendar en tu navegador');
+                        console.error('2️⃣  Haz clic en la configuración (⚙️) > Configuración');
+                        console.error('3️⃣  En "Configuración de mis calendarios", busca y haz clic en "Records"');
+                        console.error('4️⃣  Desplázate hasta la sección "Compartido con"');
+                        console.error('5️⃣  Haz clic en "+ Añadir personas y grupos"');
+                        console.error(`6️⃣  Ingresa el email del Service Account: ${serviceAccountEmail}`);
+                        console.error('7️⃣  Selecciona "Hacer cambios en eventos" (permisos de escritura)');
+                        console.error('8️⃣  Haz clic en "Enviar"');
+                        console.error('');
+                        console.error(`📧 Email del Service Account a compartir: ${serviceAccountEmail}`);
+                        console.error(`🆔 ID del calendario: ${calendarConfig.calendarId}`);
+                        console.error('');
+                        console.error('💡 Después de compartir, espera unos minutos y vuelve a ejecutar el script.');
+                        console.error('');
+                        
+                        // Intentar buscar en la lista de calendarios disponibles
+                        console.log('🔍 Buscando el calendario en la lista de calendarios disponibles...');
+                        try {
+                            const calendars = await this.calendar.calendarList.list();
+                            console.log(`📊 Total de calendarios encontrados: ${calendars.data.items.length}`);
+                            
+                            // Mostrar todos los calendarios para debug
+                            calendars.data.items.forEach((cal, index) => {
+                                console.log(`   ${index + 1}. "${cal.summary}" (ID: ${cal.id}) - Access: ${cal.accessRole}`);
+                            });
+                            
+                            // Buscar calendario "Records" o "Releases"
+                            let releasesCalendar = calendars.data.items.find(cal => 
+                                cal.summary === 'Records' ||
+                                cal.summary === 'Releases' ||
+                                cal.summary.toLowerCase().includes('record') ||
+                                cal.summary.toLowerCase().includes('release')
+                            );
+                            
+                            if (releasesCalendar) {
+                                console.log('');
+                                console.log('✅ Calendario Records encontrado en lista con un ID diferente');
+                                console.log(`   • Nombre: ${releasesCalendar.summary}`);
+                                console.log(`   • ID encontrado: ${releasesCalendar.id}`);
+                                console.log(`   • ID configurado: ${calendarConfig.calendarId}`);
+                                console.log(`   • Access Role: ${releasesCalendar.accessRole}`);
+                                console.log('');
+                                console.log('💡 El calendario existe pero tiene un ID diferente.');
+                                console.log('   Actualiza el ID en calendar-config-releases.js con el ID encontrado arriba.');
+                                this.calendarId = releasesCalendar.id;
+                                return releasesCalendar;
+                            } else {
+                                console.log('');
+                                console.error('❌ El calendario "Records" NO aparece en la lista de calendarios disponibles.');
+                                console.error('   Esto confirma que el Service Account no tiene acceso al calendario.');
+                            }
+                        } catch (listError) {
+                            console.error('❌ Error obteniendo lista de calendarios:', listError.message);
+                        }
+                    }
                     throw error;
                 }
             }
@@ -144,24 +208,62 @@ class ReleasesCalendarUpdater {
 
             // Si no se encuentra, mostrar error
             console.error('❌ Calendario "Records" NO encontrado');
-            console.error('❌ Opciones disponibles:');
-            console.error('   1. Crear un calendario "Records" en Google Calendar');
-            console.error('   2. Compartir el calendario con el Service Account (permisos de escritura)');
-            console.error('   3. Actualizar el ID en calendar-config-releases.js');
+            console.error('');
+            console.error('📋 PASOS PARA COMPARTIR EL CALENDARIO "RECORDS":');
+            console.error('1️⃣  Abre Google Calendar en tu navegador');
+            console.error('2️⃣  Haz clic en la configuración (⚙️) > Configuración');
+            console.error('3️⃣  En "Configuración de mis calendarios", busca y haz clic en "Records"');
+            console.error('4️⃣  Desplázate hasta la sección "Compartido con"');
+            console.error('5️⃣  Haz clic en "+ Añadir personas y grupos"');
+            console.error(`6️⃣  Ingresa el email del Service Account: ${serviceAccountEmail}`);
+            console.error('7️⃣  Selecciona "Hacer cambios en eventos" (permisos de escritura)');
+            console.error('8️⃣  Haz clic en "Enviar"');
+            console.error('');
+            console.error(`📧 Email del Service Account a compartir: ${serviceAccountEmail}`);
+            console.error(`🆔 ID del calendario: ${calendarConfig.calendarId}`);
             console.error('');
             console.error('📋 Calendarios disponibles:');
             calendars.data.items.forEach((cal, index) => {
                 console.error(`   ${index + 1}. "${cal.summary}" (ID: ${cal.id})`);
             });
             
-            throw new Error('Calendario Records no encontrado');
+            throw new Error('Calendario Records no encontrado o no compartido con el Service Account');
 
         } catch (error) {
-            console.error('❌ Error buscando calendario:', error);
-            console.error('❌ Detalles del error:', error.message);
-            if (error.response) {
-                console.error('❌ Response data:', error.response.data);
-                console.error('❌ Response status:', error.response.status);
+            if (error.code === 404 || error.message.includes('not found')) {
+                const serviceAccountEmail = this.loadServiceAccount()?.client_email || 'SERVICE_ACCOUNT_EMAIL';
+                console.error('');
+                console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                console.error('❌ ERROR: El Service Account no puede acceder al calendario "Records"');
+                console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                console.error('');
+                console.error('🔧 SOLUCIÓN REQUERIDA:');
+                console.error('');
+                console.error('El calendario "Records" existe pero NO está compartido con el Service Account.');
+                console.error('');
+                console.error('📋 INSTRUCCIONES PASO A PASO:');
+                console.error('');
+                console.error('1️⃣  Ve a Google Calendar: https://calendar.google.com');
+                console.error('2️⃣  Haz clic en el icono de configuración (⚙️) en la esquina superior derecha');
+                console.error('3️⃣  Selecciona "Configuración"');
+                console.error('4️⃣  En el menú lateral izquierdo, busca "Records" bajo "Configuración de mis calendarios"');
+                console.error('5️⃣  Haz clic en "Records"');
+                console.error('6️⃣  Busca la sección "Compartido con"');
+                console.error('7️⃣  Haz clic en "+ Añadir personas y grupos"');
+                console.error(`8️⃣  Ingresa este email: ${serviceAccountEmail}`);
+                console.error('9️⃣  En el dropdown de permisos, selecciona "Hacer cambios en eventos"');
+                console.error('🔟 Haz clic en "Enviar" o "Enviar invitación"');
+                console.error('');
+                console.error('⏰ Después de compartir, espera 1-2 minutos y vuelve a ejecutar el script.');
+                console.error('');
+                console.error('📧 Email del Service Account que necesitas compartir:');
+                console.error(`   ${serviceAccountEmail}`);
+                console.error('');
+                console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            }
+            console.error('❌ Error buscando calendario:', error.message);
+            if (error.response && error.response.status) {
+                console.error(`❌ Response status: ${error.response.status}`);
             }
             throw error;
         }
