@@ -1,11 +1,12 @@
 /**
  * Script para actualizar TODOS LOS CALENDARIOS automáticamente
- * Live + Management + Booking sin preguntas
+ * Live + Management + Booking + Releases sin preguntas
  */
 
 const ServiceAccountCalendarUpdater = require('./updateCalendarServiceAccount');
 const ManagementCalendarUpdater = require('./updateCalendarManagement');
 const BookingCalendarUpdater = require('./updateBookingCalendar');
+const ReleasesCalendarUpdater = require('./updateReleasesCalendar');
 const fs = require('fs');
 const path = require('path');
 
@@ -17,6 +18,7 @@ class AllCalendarsUpdater {
         this.liveUpdater = new ServiceAccountCalendarUpdater();
         this.mgmtUpdater = new ManagementCalendarUpdater();
         this.bookingUpdater = new BookingCalendarUpdater();
+        this.releasesUpdater = new ReleasesCalendarUpdater();
     }
 
     /**
@@ -30,6 +32,7 @@ class AllCalendarsUpdater {
             console.log('   • Live (shows desde API) - TODOS LOS STATUS');
             console.log('   • Management (datos desde mgm_events) - TODOS LOS STATUS');
             console.log('   • Booking (datos desde booking_events) - TODOS LOS STATUS');
+            console.log('   • Records (datos desde API de releases) - TODOS LOS STATUS');
             console.log('');
 
             // Verificar credenciales
@@ -42,7 +45,8 @@ class AllCalendarsUpdater {
             const results = {
                 live: false,
                 management: false,
-                booking: false
+                booking: false,
+                releases: false
             };
 
             // 1. Actualizar calendario Live
@@ -81,19 +85,32 @@ class AllCalendarsUpdater {
                 results.booking = false;
             }
 
-            // 4. Resumen final
+            // 4. Actualizar calendario Records
+            console.log('\n💿 PASO 4: ACTUALIZANDO CALENDARIO "RECORDS"');
+            console.log('='.repeat(50));
+            try {
+                await this.releasesUpdater.updateCalendar();
+                results.releases = true;
+                console.log('\n✅ Calendario "Records" actualizado exitosamente');
+            } catch (error) {
+                console.error('\n❌ Error actualizando calendario "Records":', error.message);
+                results.releases = false;
+            }
+
+            // 5. Resumen final
             console.log('\n🎉 ACTUALIZACIÓN COMPLETADA');
             console.log('='.repeat(60));
             console.log('📊 Resumen:');
             console.log(`   • Calendario Live: ${results.live ? '✅ Exitoso' : '❌ Falló'}`);
             console.log(`   • Calendario Management: ${results.management ? '✅ Exitoso' : '❌ Falló'}`);
             console.log(`   • Calendario Booking: ${results.booking ? '✅ Exitoso' : '❌ Falló'}`);
+            console.log(`   • Calendario Records: ${results.releases ? '✅ Exitoso' : '❌ Falló'}`);
             
-            const successCount = (results.live ? 1 : 0) + (results.management ? 1 : 0) + (results.booking ? 1 : 0);
+            const successCount = (results.live ? 1 : 0) + (results.management ? 1 : 0) + (results.booking ? 1 : 0) + (results.releases ? 1 : 0);
             
-            console.log(`\n📈 Resultado: ${successCount}/3 calendarios actualizados exitosamente`);
+            console.log(`\n📈 Resultado: ${successCount}/4 calendarios actualizados exitosamente`);
             
-            if (successCount === 3) {
+            if (successCount === 4) {
                 console.log('🎊 ¡Todos los calendarios actualizados correctamente!');
                 console.log('\n🔗 Enlaces a los calendarios:');
                 console.log('   • Live: https://calendar.google.com/calendar/u/0/r?cid=c_b1cdbb35e2e538d44729a8d7c06c6ae7349402a3eea9509b4332c5060ddd4d26@group.calendar.google.com');

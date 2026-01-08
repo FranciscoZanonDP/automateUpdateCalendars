@@ -47,6 +47,63 @@ jobs:
       env:
         TZ: 'America/Argentina/Buenos_Aires'
         
+    - name: Display calendar subscription URLs
+      if: success()
+      run: |
+        echo ""
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "📅 URLs DE SUSCRIPCIÓN A LOS CALENDARIOS"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo ""
+        
+        # Calendario Live
+        echo "🎵 CALENDARIO LIVE"
+        echo "   ID: c_b1cdbb35e2e538d44729a8d7c06c6ae7349402a3eea9509b4332c5060ddd4d26@group.calendar.google.com"
+        echo "   📱 URL pública (para suscribirse en Google Calendar):"
+        echo "   https://calendar.google.com/calendar/u/0?cid=c_b1cdbb35e2e538d44729a8d7c06c6ae7349402a3eea9509b4332c5060ddd4d26%40group.calendar.google.com"
+        echo "   📥 URL iCal pública (para otras aplicaciones - requiere calendario público):"
+        echo "   https://calendar.google.com/calendar/ical/c_b1cdbb35e2e538d44729a8d7c06c6ae7349402a3eea9509b4332c5060ddd4d26%40group.calendar.google.com/public/basic.ics"
+        echo ""
+        
+        # Calendario Management
+        echo "📊 CALENDARIO MANAGEMENT"
+        echo "   ID: c_7a6a9470388a244b85562ecb7268a773ca6d005d8bb142088a4d9abcd510e377@group.calendar.google.com"
+        echo "   📱 URL pública (para suscribirse en Google Calendar):"
+        echo "   https://calendar.google.com/calendar/u/0?cid=c_7a6a9470388a244b85562ecb7268a773ca6d005d8bb142088a4d9abcd510e377%40group.calendar.google.com"
+        echo "   📥 URL iCal pública (para otras aplicaciones - requiere calendario público):"
+        echo "   https://calendar.google.com/calendar/ical/c_7a6a9470388a244b85562ecb7268a773ca6d005d8bb142088a4d9abcd510e377%40group.calendar.google.com/public/basic.ics"
+        echo ""
+        
+        # Calendario Booking
+        echo "📅 CALENDARIO BOOKING"
+        echo "   ID: c_7fba15b73d470d9bfbf3e8708bf13f219cfe5128b3aec41415ff0bf3a6ca0f7e@group.calendar.google.com"
+        echo "   📱 URL pública (para suscribirse en Google Calendar):"
+        echo "   https://calendar.google.com/calendar/u/0?cid=c_7fba15b73d470d9bfbf3e8708bf13f219cfe5128b3aec41415ff0bf3a6ca0f7e%40group.calendar.google.com"
+        echo "   📥 URL iCal pública (para otras aplicaciones - requiere calendario público):"
+        echo "   https://calendar.google.com/calendar/ical/c_7fba15b73d470d9bfbf3e8708bf13f219cfe5128b3aec41415ff0bf3a6ca0f7e%40group.calendar.google.com/public/basic.ics"
+        echo ""
+        
+        # Calendario Records
+        echo "💿 CALENDARIO RECORDS"
+        echo "   ID: c_65f6f9dd7e6a17e03a9b3e50836b041dafb42f81bcdba13ac19a94ee75762592@group.calendar.google.com"
+        echo "   📱 URL pública (para suscribirse en Google Calendar):"
+        echo "   https://calendar.google.com/calendar/u/0?cid=c_65f6f9dd7e6a17e03a9b3e50836b041dafb42f81bcdba13ac19a94ee75762592%40group.calendar.google.com"
+        echo "   📥 URL iCal pública (para otras aplicaciones - requiere calendario público):"
+        echo "   https://calendar.google.com/calendar/ical/c_65f6f9dd7e6a17e03a9b3e50836b041dafb42f81bcdba13ac19a94ee75762592%40group.calendar.google.com/public/basic.ics"
+        echo ""
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "💡 CÓMO SUSCRIBIRSE:"
+        echo "   1. Copia la URL pública (📱) del calendario que quieras"
+        echo "   2. Abre Google Calendar"
+        echo "   3. Haz clic en el '+' junto a 'Otros calendarios'"
+        echo "   4. Selecciona 'Por URL'"
+        echo "   5. Pega la URL y haz clic en 'Agregar calendario'"
+        echo ""
+        echo "   Para aplicaciones externas (Outlook, Apple Calendar, etc.):"
+        echo "   - Usa la URL iCal pública (📥) si el calendario es público"
+        echo "   - O usa la URL iCal privada desde la configuración del calendario"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        
     - name: Upload logs
       uses: actions/upload-artifact@v4
       if: always()
